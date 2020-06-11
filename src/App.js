@@ -5,6 +5,7 @@ import LoadingSpinner from "./components/LoadingSpinner";
 
 
 const hNewsTopStoriesURI = 'https://hacker-news.firebaseio.com/v0/topstories.json';
+const maxStories = 10;
 
 class App extends Component {
 
@@ -13,39 +14,38 @@ class App extends Component {
         this.state = {
             topStories: [],
             isLoading: false,
-            loadingProgress: 0,
+            maxStories,
         };
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         this.setState({ isLoading: true });
-        fetch(hNewsTopStoriesURI)
-            .then(response => response.json())
-            .then(storyIds => {
-                const totalStories = storyIds.length;
-                let storiesDownloaded = 0;
-                const storyMetadataPromises = storyIds
-                    .map(
-                        id => fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`)
-                            .then(response => {
-                                ++storiesDownloaded;
-                                this.setState({
-                                    loadingProgress: (storiesDownloaded/totalStories * 100).toFixed(2)
-                                });
-                                return response.json();
-                            })
-                    );
-                Promise.all(storyMetadataPromises)
-                    .then(metadatas => {
-                        metadatas = metadatas.map((metadata, index) => {
-                            return {...metadata, index: index+1, key: metadata.id};
-                        })
-                        this.setState({
-                            topStories: metadatas,
-                            isLoading: false,
-                        });
+        const hNewsAPIResponse = await fetch(hNewsTopStoriesURI);
+        const topStoryIDs = await hNewsAPIResponse.json();
+        const totalStories = topStoryIDs.length;
+
+        let storiesDownloaded = 0;
+        const storyMetadataPromises = topStoryIDs
+            .slice(0, this.state.maxStories)
+            .map(async id => {
+                    const storyDetailsResponse = await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`)
+                    ++storiesDownloaded;
+                    this.setState({
+                        loadingProgress: (storiesDownloaded/totalStories * 100).toFixed(2)
                     });
-            });
+                    return storyDetailsResponse.json();
+                }
+            );
+
+        let metadatazz = await Promise.all(storyMetadataPromises);
+
+        metadatazz = metadatazz.map((metadata, index) => {
+            return {...metadata, index: index+1, key: metadata.id};
+        })
+        this.setState({
+            topStories: metadatazz,
+            isLoading: false,
+        });
     }
 
     render() {
