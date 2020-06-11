@@ -1,6 +1,6 @@
 {
   "name": "hackernews-lounge",
-  "homepage": "daukadolt.github.io/hackernews-lounge",
+  "homepage": ".",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
